@@ -1,0 +1,43 @@
+# Python Files
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+staticfiles/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+
+# Virtual Environment
+venv/
+
+# PyCharm Files
+.idea/
+
+# VSCode Files
+.vscode/
+
+# Other Files
+/atxsync_cashier.json
+/*.spec
+/atxsync_cashier.log
+/conf.bin
+/ldc.bin
+/_compile/release/
+/_compile/bkp_release/
+_later/

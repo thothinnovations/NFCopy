@@ -1,0 +1,6 @@
+pyscard==2.3.0
+pystray==0.19.5
+Pillow==11.3.0
+pyperclip==1.9.0
+pyinstaller==6.15.0
+win10toast-persist==0.10.1
