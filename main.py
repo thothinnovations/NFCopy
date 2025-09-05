@@ -142,13 +142,21 @@ class UIDObserver(CardObserver):
 
             data, sw1, sw2 = conn.transmit(GET_UID_COMMAND)
             if (sw1, sw2) == (0x90, 0x00) and data:
-                uid_hex = toHexString(data).replace(" ", "").upper()
+                # Heuristic for ACR122U's response for 4-byte MIFARE cards.
+                # It often returns 7 bytes: UID[1:3] + SAK + ATQA + ...
+                # We need to prepend the missing cascade tag (0x88).
+                if len(data) > 4:  # A simple check to target longer-than-expected UIDs
+                    # Take the first 3 bytes from the reader and prepend the 0x88 tag
+                    uid_bytes = [0x88] + data[:3]
+                else:
+                    uid_bytes = data
+
+                uid_hex = toHexString(uid_bytes).replace(" ", "").upper()
                 self._on_uid(uid_hex)
             else:
                 _safe_log(f"[UIDObserver] SW1/SW2 inesperado: {sw1:02X} {sw2:02X}")
         except Exception as e:
             _safe_log(f"[UIDObserver] Exceção ao ler cartão: {e}\n{traceback.format_exc()}")
-
 
 # -----------------------------------------------------------------------------
 # App principal (tray)
