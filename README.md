@@ -2,6 +2,7 @@
 ### Leitor UID para NFC / RFID / CCID / PC / SC
 #### Monitora leitores USB fazendo a leitura do UID ao aproximar um cartão.
 
+- Lê apenas UIDs de 4 bytes
 - Compatível com Windows 10 / 11
 - Sem janela: apenas ícone na bandeja do sistema.
 - Notifica e copia automaticamente o UID de cartões aproximados.
