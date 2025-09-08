@@ -10,5 +10,11 @@
 
 ### Para gerar o arquivo executável:
 ```
+pyinstaller NFCopy.spec
+```
+
+ou
+
+```
 pyinstaller --noconfirm --clean --onefile --windowed --name NFCopy --icon icon.ico --hidden-import=smartcard --hidden-import=smartcard.System --hidden-import=smartcard.CardMonitoring --hidden-import=smartcard.Exceptions main.py
 ```
