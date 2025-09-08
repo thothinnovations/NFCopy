@@ -33,9 +33,6 @@ venv/
 .vscode/
 
 # Other Files
-/atxsync_cashier.json
-/*.spec
-/atxsync_cashier.log
 /conf.bin
 /ldc.bin
 /_compile/release/
