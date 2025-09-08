@@ -11,7 +11,6 @@ from typing import Optional
 import pystray
 from pystray import Menu
 from smartcard.System import readers
-from win10toast_persist import ToastNotifier
 
 from version import APP_NAME, APP_DESC, VERSION, AUTHOR
 from .nfc.observer import UIDObserver
@@ -35,11 +34,10 @@ class TrayApplication:
             title=f"{APP_NAME} — {APP_DESC}\nVersão {VERSION} — {AUTHOR}",
         )
 
-        # EXACT like original: deque with maxlen=10
         self.history = deque(maxlen=10)
         self.reader_name: Optional[str] = None
 
-        self.notifier = Notifier(self._balloon_notify)
+        self.notifier = Notifier(self.icon)
         self.is_startup_notified = False
 
         self._stop_event = threading.Event()
@@ -50,7 +48,7 @@ class TrayApplication:
         self._rebuild_menu()  # initial menu
 
     # -------------------------- public API ---------------------------------
-    def run(self) -> None:  # pragma: no cover (UI loop)
+    def run(self) -> None:
         """Run the tray icon loop and start background monitoring."""
         safe_log("=== Starting NFCopy ===")
         threading.Thread(target=self._monitor_loop, name="SCMonitor", daemon=True).start()
@@ -62,7 +60,6 @@ class TrayApplication:
         """
         Handle a freshly read UID: copy, record, update UI, notify.
 
-        Behavior mirrors the original script:
         - copy to clipboard
         - if UID already exists, remove it
         - append UID to the end (most recent)
@@ -70,10 +67,9 @@ class TrayApplication:
         """
         try:
             copy_text(uid)
-        except Exception as exc:  # pragma: no cover (OS dependent)
+        except Exception as exc:
             safe_log(f"[App] Clipboard copy failed: {exc}")
 
-        # Move-to-end semantics without duplicates (identical to original main.py)
         try:
             if uid in self.history:
                 self.history.remove(uid)
@@ -82,7 +78,7 @@ class TrayApplication:
         self.history.append(uid)
 
         self._rebuild_menu()
-        self.notifier.show_uid_toast(uid)
+        self.notifier.uid_copied(uid)
 
     # --------------------- reader monitoring loop --------------------------
     def _monitor_loop(self) -> None:
@@ -100,7 +96,7 @@ class TrayApplication:
 
             if connected != last_connected or name != last_name:
                 self.reader_name = name
-                self.notifier.show_nfc_reader_state_toast(name, last_name, connected)
+                self.notifier.nfc_reader_state(name, last_name, connected)
                 self._set_icon_connected(connected)
                 self._rebuild_menu()
                 last_connected, last_name = connected, name
@@ -111,7 +107,7 @@ class TrayApplication:
                 self._ensure_card_monitor_stopped()
 
             if not self.is_startup_notified:
-                self.notifier.show_nfc_reader_state_toast(name, last_name, connected)
+                self.notifier.nfc_reader_state(name, last_name, connected)
                 self.is_startup_notified = True
 
             for _ in range(10):
@@ -121,7 +117,7 @@ class TrayApplication:
 
         self._ensure_card_monitor_stopped()
 
-    def _ensure_card_monitor_started(self) -> None:  # pragma: no cover
+    def _ensure_card_monitor_started(self) -> None:
         from smartcard.CardMonitoring import CardMonitor
 
         with self._monitor_lock:
@@ -134,7 +130,7 @@ class TrayApplication:
                 except Exception as exc:
                     safe_log(f"[App] Failed to start CardMonitor: {exc}")
 
-    def _ensure_card_monitor_stopped(self) -> None:  # pragma: no cover
+    def _ensure_card_monitor_stopped(self) -> None:
         with self._monitor_lock:
             try:
                 if self._card_monitor and self._observer:
@@ -156,7 +152,7 @@ class TrayApplication:
     def _set_icon_connected(self, connected: bool) -> None:
         try:
             self.icon.icon = self._icon_connected if connected else self._icon_disconnected
-        except Exception as exc:  # pragma: no cover
+        except Exception as exc:
             safe_log(f"[App] Failed to switch icon: {exc}")
 
     def _rebuild_menu(self) -> None:
@@ -182,16 +178,11 @@ class TrayApplication:
         """
         try:
             copy_text(uid)
-            try:  # lightweight feedback
-                ToastNotifier().show_toast(
-                    "UID copiado", f'"{uid}" foi copiado', duration=3, threaded=True, icon_path=None
-                )
-            except Exception:
-                pass
+            self.notifier.uid_copied(uid)
         except Exception as exc:
             safe_log(f"[App] Failed to copy UID from menu: {exc}")
 
-    def _on_click_exit(self, icon=None, item=None) -> None:  # pragma: no cover (UI)
+    def _on_click_exit(self, icon=None, item=None) -> None:
         self._stop_event.set()
         try:
             self._ensure_card_monitor_stopped()
@@ -201,10 +192,3 @@ class TrayApplication:
                 self.icon.stop()
             except Exception:
                 pass
-
-    # balloon fallback for Notifier -----------------------------------------
-    def _balloon_notify(self, body: str, title: str) -> None:  # pragma: no cover (UI)
-        try:
-            self.icon.notify(body, title=title)
-        except Exception:
-            pass
